@@ -1,0 +1,31 @@
+Biblioteca AcaDyne
+Descripción General
+La biblioteca AcaDyne es una herramienta avanzada diseñada para la manipulación y operación de conjuntos de elementos simbólicos utilizando las bibliotecas sympy y numpy. Proporciona una clase principal, SetTensor, que facilita la realización de operaciones matemáticas y simbólicas complejas, como la unión, intersección, diferencias y transformaciones de conjuntos, así como cálculos avanzados como el análisis de estabilidad, simulaciones dinámicas y análisis de sensibilidad.
+
+Características Principales
+1. Manipulación de Conjuntos Simbólicos
+Creación de Conjuntos: Permite inicializar conjuntos a partir de listas de elementos, FiniteSet, Interval o Union de sympy.
+Operaciones de Conjuntos: Realiza operaciones estándar como unión, intersección, diferencia y complemento, proporcionando resultados en forma de nuevos objetos SetTensor.
+2. Transformaciones Matemáticas
+Transformaciones Funcionales: Aplica funciones simbólicas a los elementos de los conjuntos.
+Simplificación y Expansión: Simplifica y expande elementos simbólicos dentro de los conjuntos.
+Derivación e Integración: Calcula derivadas e integrales indefinidas de elementos simbólicos.
+3. Resolución de Ecuaciones y Sistemas
+Ecuaciones Simbólicas: Resuelve ecuaciones individuales y sistemas de ecuaciones simbólicas.
+Ecuaciones Diferenciales: Resuelve ecuaciones diferenciales ordinarias (EDO).
+Análisis Jacobiano y Hessiano: Calcula matrices Jacobianas y Hessianas para análisis de funciones multivariables.
+4. Análisis Avanzado
+Optimización de Funciones: Realiza optimización simbólica para encontrar máximos y mínimos de funciones.
+Análisis de Estabilidad: Evalúa la estabilidad de puntos de equilibrio en sistemas dinámicos.
+Simulaciones Dinámicas: Simula sistemas dinámicos continuos y discretos a lo largo del tiempo.
+5. Operaciones Matriciales y Transformaciones
+Operaciones en Matrices: Realiza cálculos simbólicos como determinante, traza e inversa de matrices.
+Transformaciones de Lorentz: Calcula matrices de transformación de Lorentz para física teórica.
+6. Modelado y Simulación
+Modelo SIR Epidemiológico: Simula el modelo SIR para análisis epidemiológico.
+Oscilador Armónico: Modela sistemas oscilantes utilizando constantes físicas.
+7. Análisis de Series y Secuencias
+Serie de Fibonacci: Calcula términos de la serie de Fibonacci utilizando diversos métodos.
+Función Generadora: Utiliza funciones generadoras para derivar propiedades de series.
+Aplicaciones
+La biblioteca AcaDyne es ideal para investigadores, ingenieros y matemáticos que trabajan en áreas que requieren cálculos simbólicos y análisis avanzados. Su capacidad para integrar simbología con análisis numérico y optimización la hace adecuada para tareas de simulación de sistemas físicos, modelado matemático y análisis de datos simbólicos.
