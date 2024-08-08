@@ -1,8 +1,9 @@
 import unittest
-from acadyne.tensores.dynamic_tensor import DynamicTensor
-from acadyne.tensores.set_tensor import SetTensor
 import numpy as np
 import sympy as sp
+
+from tensores.dynamic_tensor import DynamicTensor
+from tensores.set_tensor import SetTensor
 
 class TestDynamicTensor(unittest.TestCase):
     def test_matrix_multiplication(self):

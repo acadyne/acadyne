@@ -1,7 +1,8 @@
-from acadyne.tensores.set_tensor import SetTensor
-from acadyne.tensores.tensor_bionico import BionicTensor
+
 import sympy as sp
 
+from tensores.set_tensor import SetTensor
+from tensores.tensor_bionico import BionicTensor
 
 def demonstrate_set_tensor_operations():
     # Crear instancias de SetTensor con diferentes elementos

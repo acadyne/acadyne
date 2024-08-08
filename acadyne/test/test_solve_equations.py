@@ -1,5 +1,6 @@
-from acadyne.tensores.set_tensor import SetTensor
 import sympy as sp
+
+from tensores.set_tensor import SetTensor
 
 def main():
     # Inicializar un conjunto de ecuaciones

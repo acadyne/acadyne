@@ -1,6 +1,8 @@
 # demo_set_tensor.py
 
-from acadyne.tensores.set_tensor import SetTensor
+
+from tensores.set_tensor import SetTensor
+
 
 def main():
     # Inicializar dos conjuntos con SetTensor

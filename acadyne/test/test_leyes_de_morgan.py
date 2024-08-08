@@ -1,5 +1,7 @@
 # comprueba las Leyes de De Morgan:
-from acadyne.tensores.set_tensor import SetTensor
+
+from tensores.set_tensor import SetTensor
+
 
 def main():
     # Definimos los conjuntos A y B
