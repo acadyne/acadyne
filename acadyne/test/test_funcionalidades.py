@@ -1,5 +1,5 @@
-from acadyne.tensor.set_tensor import SetTensor
-from acadyne.core.tensor_bionico import BionicTensor
+from acadyne.tensores.set_tensor import SetTensor
+from acadyne.tensores.tensor_bionico import BionicTensor
 import sympy as sp
 
 

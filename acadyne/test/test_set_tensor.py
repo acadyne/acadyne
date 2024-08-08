@@ -1,6 +1,6 @@
 import unittest
 import sympy as sp
-from acadyne.tensor.set_tensor import SetTensor, InvalidElementStructureError
+from acadyne.tensores.set_tensor import SetTensor, InvalidElementStructureError
 
 class TestSetTensor(unittest.TestCase):
     def test_initialize_with_list(self):

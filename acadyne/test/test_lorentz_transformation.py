@@ -1,4 +1,4 @@
-from acadyne.tensor.set_tensor import SetTensor
+from acadyne.tensores.set_tensor import SetTensor
 import sympy as sp
 
 def main():

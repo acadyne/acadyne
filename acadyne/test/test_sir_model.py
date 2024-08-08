@@ -1,4 +1,4 @@
-from acadyne.tensor.set_tensor import SetTensor
+from acadyne.tensores.set_tensor import SetTensor
 
 def main():
     # Inicializar un SetTensor para simulación de SIR
