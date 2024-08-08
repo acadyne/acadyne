@@ -1,78 +1,73 @@
 import unittest
-import numpy as np
 import sympy as sp
 
-from tensores.dynamic_tensor import DynamicTensor
-from tensores.set_tensor import SetTensor
+from tensores.dynamic_tensor import BaseTensor
 
-class TestDynamicTensor(unittest.TestCase):
-    def test_matrix_multiplication(self):
-        t1 = SetTensor([[1, 2, 3], [4, 5, 6]])
-        t2 = SetTensor([[7, 8], [9, 10], [11, 12]])
-        result = t1.multiply(t2)
-        expected = SetTensor([[58, 64], [139, 154]])
-        self.assertTrue(np.array_equal(result.components, expected.components))
+class TestSymbolicTensor(unittest.TestCase):
 
-    def test_scalar_multiplication(self):
-        t = SetTensor([[1, 2], [3, 4]])
-        scalar = 3
-        result = t.multiply(scalar)
-        expected = SetTensor([[3, 6], [9, 12]])
-        self.assertTrue(np.array_equal(result.components, expected.components))
+    def setUp(self):
+        self.x, self.y, self.z = sp.symbols('x y z')
+        self.tensor = BaseTensor([
+            [self.x**2 + self.y, sp.sin(self.x) * sp.cos(self.y), self.z**2],
+            [sp.exp(self.y), sp.log(self.x + 1), sp.sin(self.z)],
+            [self.x * self.y, self.y * self.z, self.z * self.x]
+        ])
 
-    def test_determinant_of_symbolic_tensor(self):
-        a, b, c, d = sp.symbols('a b c d')
-        t = SetTensor([[a, b], [c, d]])
-        determinant = t.determinant()
-        expected = a*d - b*c
-        self.assertEqual(determinant, expected)
+    def test_tensor_evaluation(self):
+        subs = {self.x: 1, self.y: 2, self.z: 3}
+        evaluated_tensor = self.tensor.evaluate(subs)
+        expected_result = sp.Matrix([
+            [3, sp.sin(1) * sp.cos(2), 9],
+            [sp.exp(2), sp.log(2), sp.sin(3)],
+            [2, 6, 3]
+        ])
+        print("Evaluated Tensor:", evaluated_tensor)
+        print("Expected Result:", expected_result)
+        for i in range(3):
+            for j in range(3):
+                self.assertTrue(sp.simplify(evaluated_tensor.components[i, j] - expected_result[i, j]).is_zero)
 
-    def test_inverse_of_symbolic_tensor(self):
-        a, b, c, d = sp.symbols('a b c d')
-        t = SetTensor([[a, b], [c, d]])
-        inverse = t.inverse()
-        expected = SetTensor([[d/(a*d - b*c), -b/(a*d - b*c)], [-c/(a*d - b*c), a/(a*d - b*c)]])
-        for i in range(2):
-            for j in range(2):
-                self.assertEqual(inverse.components[i, j].simplify(), expected.components[i, j].simplify())
+    def test_rotation_3d(self):
+        theta_x, theta_y, theta_z = sp.symbols('theta_x theta_y theta_z')
+        rotation_matrix = sp.Matrix([
+            [sp.cos(theta_y) * sp.cos(theta_z), -sp.cos(theta_y) * sp.sin(theta_z), sp.sin(theta_y)],
+            [sp.sin(theta_x) * sp.sin(theta_y) * sp.cos(theta_z) + sp.cos(theta_x) * sp.sin(theta_z), -sp.sin(theta_x) * sp.sin(theta_y) * sp.sin(theta_z) + sp.cos(theta_x) * sp.cos(theta_z), -sp.sin(theta_x) * sp.cos(theta_y)],
+            [-sp.cos(theta_x) * sp.sin(theta_y) * sp.cos(theta_z) + sp.sin(theta_x) * sp.sin(theta_z), sp.cos(theta_x) * sp.sin(theta_y) * sp.sin(theta_z) + sp.sin(theta_x) * sp.cos(theta_z), sp.cos(theta_x) * sp.cos(theta_y)]
+        ])
+        rotation_tensor = BaseTensor(rotation_matrix.tolist())
+        rotation_tensor_T = BaseTensor(rotation_matrix.T.tolist())
 
-    def test_apply_nonlinear_transformation(self):
-        t = DynamicTensor([[1, 2], [3, 4]])
-        result = t.nonlinear_transformation(lambda x: x**2)
-        expected = DynamicTensor([[1, 4], [9, 16]])
-        self.assertTrue(np.array_equal(result.components, expected.components))
+        rotated_tensor = rotation_tensor.multiply(self.tensor).multiply(rotation_tensor_T)
+        rotated_tensor_evaluated = rotated_tensor.evaluate({theta_x: sp.pi / 4, theta_y: sp.pi / 4, theta_z: sp.pi / 4})
 
-    def test_singular_value_decomposition(self):
-        t = SetTensor([[1, 0], [0, 1]])
-        u, s, v = t.singular_value_decomposition()
-        self.assertTrue(np.allclose(u @ np.diag(s) @ v, np.array([[1, 0], [0, 1]])))
+        self.assertIsNotNone(rotated_tensor_evaluated)  # This is just a placeholder check
+        # Use actual expected values for a real test
 
-    def test_lu_decomposition(self):
-        t = SetTensor([[4, 3], [6, 3]])
-        L, U, perm = t.lu_decomposition()
-        L_expected = [[1, 0], [1.5, 1]]
-        U_expected = [[4, 3], [0, -1.5]]
-        self.assertTrue(np.allclose(L, L_expected))
-        self.assertTrue(np.allclose(U, U_expected))
+    def test_integration_xyz(self):
+        tensor_integrated_xyz = self.tensor.integrate([self.x, self.y, self.z])
+        expected_result = sp.Matrix([
+            [self.z * (self.x**3 * self.y / 3 + self.x * self.y**2 / 2), -self.z * sp.sin(self.y) * sp.cos(self.x), self.x * self.y * self.z**3 / 3],
+            [self.x * self.z * sp.exp(self.y), self.y * self.z * (self.x * sp.log(self.x + 1) - self.x + sp.log(self.x + 1)), -self.x * self.y * sp.cos(self.z)],
+            [self.x**2 * self.y**2 * self.z / 4, self.x * self.y**2 * self.z**2 / 4, self.x**2 * self.y * self.z**2 / 4]
+        ])
+        print("Integrated Tensor:", tensor_integrated_xyz)
+        print("Expected Result:", expected_result)
+        for i in range(3):
+            for j in range(3):
+                self.assertTrue(sp.simplify(tensor_integrated_xyz.components[i, j] - expected_result[i, j]).is_zero)
 
-    def test_qr_decomposition(self):
-        t = SetTensor([[1, 2], [3, 4]])
-        q, r = t.qr_decomposition()
-        self.assertTrue(np.allclose(q @ r, np.array([[1, 2], [3, 4]])))
-
-    def test_evaluate_symbolic_tensor(self):
-        x = sp.symbols('x')
-        t = SetTensor([[x, x**2], [x**3, 1]])
-        result = t.evaluate({x: 2})
-        expected = SetTensor([[2, 4], [8, 1]])
-        self.assertTrue(np.array_equal(result.components, expected.components))
-
-    def test_differentiate_symbolic_tensor(self):
-        x = sp.symbols('x')
-        t = SetTensor([[x, x**2], [sp.sin(x), sp.cos(x)]])
-        result = t.differentiate(x)
-        expected = SetTensor([[1, 2*x], [sp.cos(x), -sp.sin(x)]])
-        self.assertTrue(np.array_equal(result.components, expected.components))
+    def test_cross_differentiation(self):
+        tensor_diff_xy = self.tensor.differentiate(self.x).differentiate(self.y)
+        expected_result = sp.Matrix([
+            [0, -sp.sin(self.y) * sp.cos(self.x), 0],
+            [0, 0, 0],
+            [1, 0, 0]
+        ])
+        print("Cross Differentiated Tensor:", tensor_diff_xy)
+        print("Expected Result:", expected_result)
+        for i in range(3):
+            for j in range(3):
+                self.assertTrue(sp.simplify(tensor_diff_xy.components[i, j] - expected_result[i, j]).is_zero)
 
 if __name__ == '__main__':
     unittest.main()

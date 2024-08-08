@@ -23,10 +23,9 @@ class BaseTensor:
             components = components.to_numpy()
 
         if isinstance(components, (list, np.ndarray)):
-            try:
-                components = np.array(components, dtype=object)
-            except Exception as e:
-                raise InvalidComponentStructureError(f"Failed to convert components to numpy array: {e}")
+            if not self.validate_components(components):
+                raise InvalidComponentStructureError("Invalid component structure.")
+            components = np.array(components, dtype=object)
         else:
             raise InvalidComponentStructureError(
                 "Components must be either a list of lists, an np.ndarray, or a pd.DataFrame."
@@ -40,6 +39,27 @@ class BaseTensor:
             ], dtype=object)
         except Exception as e:
             raise InvalidComponentStructureError(f"Failed to sympify components: {e}")
+
+    @staticmethod
+    def validate_components(components) -> bool:
+        """
+        Validates the components structure.
+
+        Parameters:
+        - components: The components to validate.
+
+        Returns:
+        - bool: True if valid, False otherwise.
+        """
+        try:
+            components = np.array(components, dtype=object)
+            for row in components:
+                for item in row:
+                    if not isinstance(item, (sp.Basic, str, float, int)):
+                        return False
+            return True
+        except Exception:
+            return False
 
     def add(self, other: 'BaseTensor') -> 'BaseTensor':
         """
@@ -166,6 +186,58 @@ class BaseTensor:
         ])
         return BaseTensor(differentiated)
 
+    def integrate(self, vars: List[sp.Symbol]) -> List['BaseTensor']:
+        """
+        Integrates each component of the tensor with respect to the given variables.
+
+        Parameters:
+        - vars (List[sp.Symbol]): The variables to integrate with respect to.
+
+        Returns:
+        - List[BaseTensor]: A list of new tensors, each integrated with respect to one of the variables.
+        """
+        integrated = [np.array([[elem.integrate(var) if isinstance(elem, sp.Basic) else elem for elem in row] for row in self._components]) for var in vars]
+        return [BaseTensor(integral) for integral in integrated]
+
+    def gradient(self, vars: List[sp.Symbol]) -> sp.Matrix:
+        """
+        Calculates the gradient of each component of the tensor with respect to the given variables.
+
+        Parameters:
+        - vars (List[sp.Symbol]): The variables to calculate the gradient with respect to.
+
+        Returns:
+        - sp.Matrix: The gradient matrix of the tensor.
+        """
+        grad_matrix = []
+        for row in self._components.tolist():
+            grad_row = []
+            for item in row:
+                grad_item = [sp.diff(item, var) for var in vars]
+                grad_row.append(sp.Matrix(grad_item))
+            grad_matrix.append(grad_row)
+        return sp.Matrix(grad_matrix)
+
+    def advanced_simplify(self) -> 'BaseTensor':
+        """
+        Applies advanced simplification to each component of the tensor.
+
+        Returns:
+        - BaseTensor: A new tensor with simplified components.
+        """
+        simplified = np.vectorize(sp.simplify)(self._components)
+        return BaseTensor(simplified)
+
+    def factorize(self) -> 'BaseTensor':
+        """
+        Factorizes each component of the tensor.
+
+        Returns:
+        - BaseTensor: A new tensor with factorized components.
+        """
+        factored = np.vectorize(sp.factor)(self._components)
+        return BaseTensor(factored)
+
     def eigenvalues(self) -> List[sp.Basic]:
         """
         Calculates the eigenvalues of the tensor if it is square.
@@ -196,14 +268,30 @@ class BaseTensor:
         eigenvectors = sp.Matrix(self._components).eigenvects()
         return [(vec[0], vec[1], [v.tolist() for v in vec[2]]) for vec in eigenvectors]
 
-    def singular_value_decomposition(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    def singular_value_decomposition(self, subs: dict = None) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         """
         Performs Singular Value Decomposition (SVD) on the tensor.
 
+        Parameters:
+        - subs (dict): A dictionary of substitutions to apply before performing SVD.
+
         Returns:
         - Tuple[np.ndarray, np.ndarray, np.ndarray]: The U, S, and V matrices from the SVD.
+
+        Raises:
+        - ValueError: If the tensor contains non-numeric elements after substitution.
         """
-        u, s, v = np.linalg.svd(np.array(self._components, dtype=float))
+        if subs:
+            evaluated = self.evaluate(subs).components
+        else:
+            evaluated = self._components
+
+        try:
+            numeric_matrix = np.array(evaluated, dtype=float)
+        except TypeError:
+            raise ValueError("Cannot perform SVD on a tensor with non-numeric elements. Provide substitutions.")
+
+        u, s, v = np.linalg.svd(numeric_matrix)
         return u, s, v
 
     def lu_decomposition(self) -> Tuple[List[List[sp.Basic]], List[List[sp.Basic]], List[int]]:
@@ -219,14 +307,30 @@ class BaseTensor:
         U_list = np.array(U).astype(object).tolist()
         return L_list, U_list, perm
 
-    def qr_decomposition(self) -> Tuple[np.ndarray, np.ndarray]:
+    def qr_decomposition(self, subs: dict = None) -> Tuple[np.ndarray, np.ndarray]:
         """
         Performs QR Decomposition on the tensor.
 
+        Parameters:
+        - subs (dict): A dictionary of substitutions to apply before performing QR decomposition.
+
         Returns:
         - Tuple[np.ndarray, np.ndarray]: The Q and R matrices from the QR decomposition.
+
+        Raises:
+        - ValueError: If the tensor contains non-numeric elements after substitution.
         """
-        q, r = np.linalg.qr(np.array(self._components, dtype=float))
+        if subs:
+            evaluated = self.evaluate(subs).components
+        else:
+            evaluated = self._components
+
+        try:
+            numeric_matrix = np.array(evaluated, dtype=float)
+        except TypeError:
+            raise ValueError("Cannot perform QR decomposition on a tensor with non-numeric elements. Provide substitutions.")
+
+        q, r = np.linalg.qr(numeric_matrix)
         return q, r
 
     @property
@@ -276,14 +380,25 @@ class BaseTensor:
         df = self.to_dataframe()
         df.to_excel(filepath, index=index, header=header)
 
-    def plot(self, title="Matrix Plot"):
+    def plot(self, subs: dict = None, title="Matrix Plot"):
         """
         Plots the tensor as a heatmap.
 
         Parameters:
+        - subs (dict): A dictionary of substitutions to apply before plotting.
         - title (str): The title of the plot.
         """
-        plt.imshow(np.array(self._components, dtype=float), cmap='viridis', aspect='auto')
+        if subs:
+            evaluated = self.evaluate(subs).components
+        else:
+            evaluated = self._components
+
+        try:
+            numeric_matrix = np.array(evaluated, dtype=float)
+        except TypeError:
+            raise ValueError("Cannot plot a tensor with non-numeric elements. Provide substitutions.")
+
+        plt.imshow(numeric_matrix, cmap='viridis', aspect='auto')
         plt.colorbar()
         plt.title(title)
         plt.show()
@@ -319,8 +434,11 @@ class DynamicTensor(BaseTensor):
         Returns:
         - DynamicTensor: A new tensor with transformed components.
         """
-        transformed = transform(self.components)
-        return DynamicTensor(transformed)
+        try:
+            transformed = transform(self.components)
+            return DynamicTensor(transformed)
+        except Exception as e:
+            raise InvalidComponentStructureError(f"Transformation failed: {e}")
 
     def expand_tensor(self, expand_func: Callable[[np.ndarray], np.ndarray]) -> 'DynamicTensor':
         """
@@ -332,8 +450,11 @@ class DynamicTensor(BaseTensor):
         Returns:
         - DynamicTensor: A new tensor with expanded components.
         """
-        expanded = expand_func(self.components)
-        return DynamicTensor(expanded)
+        try:
+            expanded = expand_func(self.components)
+            return DynamicTensor(expanded)
+        except Exception as e:
+            raise InvalidComponentStructureError(f"Expansion failed: {e}")
 
     def nonlinear_transformation(self, func: Callable[[sp.Basic], sp.Basic]) -> 'DynamicTensor':
         """
@@ -345,8 +466,11 @@ class DynamicTensor(BaseTensor):
         Returns:
         - DynamicTensor: A new tensor with transformed components.
         """
-        transformed = np.array([
-            [func(elem) for elem in row]
-            for row in self._components
-        ])
-        return DynamicTensor(transformed)
+        try:
+            transformed = np.array([
+                [func(elem) for elem in row]
+                for row in self._components
+            ])
+            return DynamicTensor(transformed)
+        except Exception as e:
+            raise InvalidComponentStructureError(f"Nonlinear transformation failed: {e}")
