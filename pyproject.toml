@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "acadyne"
-version = "0.2.5"  # Incrementa la versión aquí
+version = "0.2.6"
 description = "Una biblioteca biónica para la manipulación de tensores numéricos y simbólicos, facilitando cálculos avanzados en computación científica."
 readme = "README.md"
 license = {text = "MIT"}

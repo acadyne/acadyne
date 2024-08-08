@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="acadyne",
-    version="0.2.5",
+    version="0.2.6",
     description="Una biblioteca biónica para la manipulación de tensores numéricos y simbólicos, facilitando cálculos avanzados en computación científica.",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
